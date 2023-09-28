@@ -20,7 +20,7 @@
     Progreso: {{getPercentage()}}
 
   </span>
-  <ion-button slot="end" mode="ios">
+  <ion-button (click)="createItem()"slot="end" mode="ios">
     <ion-icon name="add-circle-outline"></ion-icon>
   </ion-button>
 </ion-item>
@@ -29,11 +29,25 @@
 
 
   <ion-reorder-group [disabled]="false" (ionItemReorder)="handleReorder($any($event))">
-    <ion-item *ngFor="let item of form.value.items">
-      <ion-checkbox slot="start"color="success" [(ngModel)]="item.completed"></ion-checkbox>
-      <ion-label>{{ item.name }} </ion-label>
-      <ion-reorder slot="end"></ion-reorder>
-    </ion-item>
+    <div *ngFor="let item of form.value.items; index as i">
+      <ion-item lines="none" >
+        <ion-checkbox slot="start"color="success" [(ngModel)]="item.completed"></ion-checkbox>
+        <ion-label class="ion-text-wrap">
+          {{ item.name }} </ion-label>
+  
+        <ion-button slot="end"
+         (click)="removeItem(1)">
+         <ion-icon  name="trash-outline"></ion-icon>
+  
+        </ion-button>
+      
+      </ion-item>
+
+      <ion-item class="item-reorder">
+        <ion-reorder slot="end"></ion-reorder>
+      </ion-item>
+    </div>
+
   </ion-reorder-group>
 
 </ion-content>
