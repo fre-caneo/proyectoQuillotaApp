@@ -39,6 +39,86 @@ export class AddUpdateTaskComponent  implements OnInit {
     }
   }
 
+  // ======== Crear o Actualizar Tarea =======
+  submit() {
+
+    if (this.form.valid) {
+
+      if (this.task) {
+        this.updateTask()
+      } else {
+
+        this.createTask();
+      }
+    }
+
+  }
+ // =========== Crear Tarea ===========
+  createTask() {
+    let path = `users/${this.user.uid}`;
+
+    this.UtilsSvc.presentLoading();
+    delete this.form.value.id;
+
+    this.firebasSvc.addToSubcollection(path, 'tasks', this.form.value).then(res => {
+
+      this.UtilsSvc.dismissModal({ success: true });
+
+      this.UtilsSvc.presentToast({
+        message: 'Sugerencia creada exitosamente',
+        color: 'success',
+        icon: 'checkmark-circle-outline',
+        duration: 1500
+      })
+
+      this.UtilsSvc.dimissLoading()
+    }, error => {
+
+      this.UtilsSvc.presentToast({
+        message: error,
+        color: 'warning',
+        icon: 'alert-circle-outline',
+        duration: 5000
+      })
+
+      this.UtilsSvc.dimissLoading()
+
+    })
+  }
+
+  // =========== Editar Tarea ==========
+  updateTask() {
+    let path = `users/${this.user.uid}/tasks/${this.task.id}`;
+
+    this.UtilsSvc.presentLoading();
+    delete this.form.value.id;
+
+    this.firebasSvc.updateDocument(path, this.form.value).then(res => {
+
+      this.UtilsSvc.dismissModal({ success: true });
+
+      this.UtilsSvc.presentToast({
+        message: 'Tarea actualizada exitosamente',
+        color: 'success',
+        icon: 'checkmark-circle-outline',
+        duration: 1500
+      })
+
+      this.UtilsSvc.dimissLoading()
+    }, error => {
+
+      this.UtilsSvc.presentToast({
+        message: error,
+        color: 'warning',
+        icon: 'alert-circle-outline',
+        duration: 5000
+      })
+
+      this.UtilsSvc.dimissLoading()
+
+    })
+  }
+
   getPercentage(){
     return this.UtilsSvc.getpercentage(this.form.value as Task)
 
@@ -54,7 +134,7 @@ export class AddUpdateTaskComponent  implements OnInit {
   
   removeItem(index:number){
     this.form.value.items.splice(index,1);
-    this.form.updateValueAndValidity();
+    this.form.controls.items.updateValueAndValidity();
 
   }
 
@@ -81,7 +161,7 @@ export class AddUpdateTaskComponent  implements OnInit {
 
             let item: Item = {name:  res.name, completed: false};
             this.form.value.items.push(item);
-            this.form.updateValueAndValidity();
+            this.form.controls.items.updateValueAndValidity();
           }
         }
       ]

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Task } from 'src/app/models/task.model';
+import { User } from 'src/app/models/user.model';
 import { FirebaseService } from 'src/app/services/firebase.service';
 import { UtilsService } from 'src/app/services/utils.service';
 import { AddUpdateTaskComponent } from 'src/app/shared/components/add-update-task/add-update-task.component';
@@ -11,39 +12,10 @@ import { AddUpdateTaskComponent } from 'src/app/shared/components/add-update-tas
 })
 export class HomePage implements OnInit {
 
-  tasks: Task[] = [
-    {
-      id: '1',
-      title: 'Primera Queja',
-      description: 'Primera queja del municipio',
-      items : [
-        {name: 'Actividad 1', completed: true},
-        {name: 'Actividad 2', completed: false},
-        {name: 'Actividad 3', completed: false},
+  user = {} as User
 
-      ]
-    },
-    {
-      id: '2',
-      title: 'Primera Sugerencia del municipio',
-      description: 'Primera sugerencia del municipio',
-      items : [
-        {name: 'Actividad 1', completed: true},
-        {name: 'Actividad 2', completed: true},
-        {name: 'Actividad 3', completed: true},
-      ]
-    },
-    {
-      id: '3',
-      title: 'Primera Peticion',
-      description: 'Primera Peticion del municipio',
-      items : [
-        {name: 'Actividad 1', completed: true},
-        {name: 'Actividad 2', completed: true},
-        {name: 'Actividad 3', completed: false},
-      ]
-    },
-  ]
+  tasks: Task[] = []
+  loading: boolean = false;
 
   constructor(
     private firebasSvc: FirebaseService,
@@ -52,7 +24,15 @@ export class HomePage implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.addOrUpdateTask(this.tasks[0])
+  
+  }
+
+  ionViewWillEnter() {
+    this.getTasks()
+    this.getUser()
+  }
+  getUser(){
+    return this.user = this.UtilsSvc.getElementFromLocalStorage('user')
   }
 
   getPercentage(task: Task){
@@ -60,12 +40,84 @@ export class HomePage implements OnInit {
 
   }
 
-  addOrUpdateTask(task?: Task){
-    this.UtilsSvc.presentModal({
+ async addOrUpdateTask(task?: Task){
+    let res = await this.UtilsSvc.presentModal({
       component: AddUpdateTaskComponent,
       componentProps : {task},
       cssClass : ''
     })
+
+    if(res && res.success){
+      this.getTasks()
+    }
+  }
+  getTasks(){
+
+    let user: User = this.UtilsSvc.getElementFromLocalStorage('user')
+    let path = `users/${user.uid}`
+    this.loading = true;
+  let sub =this.firebasSvc.getSubcollection(path, 'tasks').subscribe({
+      next: (res: Task[]) =>{
+        console.log(res);
+        this.tasks = res
+        sub.unsubscribe()
+        this.loading = false;
+      }
+    })
+
   }
 
+  confirmDeleteTask(task: Task){
+    this.UtilsSvc.presentAlert({
+      header: 'Eliminar Comentario',
+      message: '¿Quieres Eliminar este comentario?',
+      mode: 'ios',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+
+        }, {
+          text: 'Si, cerrar',
+          handler: () => {
+            this.deleteTask(task)
+            
+          }
+        }
+      ]
+    })
+
+  }
+
+  deleteTask(task: Task) {
+    let path = `users/${this.user.uid}/tasks/${task.id}`;
+
+    this.UtilsSvc.presentLoading();
+    
+
+    this.firebasSvc.deleteDocument(path).then(res => {
+
+      this.UtilsSvc.dismissModal({ success: true });
+
+      this.UtilsSvc.presentToast({
+        message: 'Actividad eliminada exitosamente',
+        color: 'success',
+        icon: 'checkmark-circle-outline',
+        duration: 1500
+      })
+      this.getTasks()
+      this.UtilsSvc.dimissLoading()
+    }, error => {
+
+      this.UtilsSvc.presentToast({
+        message: error,
+        color: 'warning',
+        icon: 'alert-circle-outline',
+        duration: 5000
+      })
+
+      this.UtilsSvc.dimissLoading()
+
+    })
+  }
 }
